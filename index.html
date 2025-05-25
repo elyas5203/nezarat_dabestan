@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم نظارت و بازدید از کلاس‌ها</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- کتابخانه‌های jsPDF و html2canvas برای کاربر عادی (برای دانلود فرم خودش) لازم است -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Chart.js برای کاربر عادی نیاز نیست، مگر اینکه بخواهید کاربر هم نمودار ببیند (فعلا حذف شده) -->
+    <link rel="stylesheet" href="user.css"> <!-- لینک به فایل CSS کاربر -->
+</head>
+<body>
+    <div class="container">
+        <!-- بخش ورود یکپارچه (ادمین از این صفحه وارد نمی‌شود) -->
+        <div id="loginSection">
+            <h1>ورود به سیستم نظارت</h1>
+            <div>
+                <label for="loginIdentifier">نام کاربری یا کد کلاس:</label>
+                <input type="text" id="loginIdentifier" placeholder="نام کاربری یا کد کلاس" required>
+            </div>
+            <div class="password-wrapper">
+                <label for="loginPassword">رمز عبور یا پسورد بازدید:</label>
+                <input type="password" id="loginPassword" placeholder="رمز عبور یا پسورد بازدید" required>
+                <button type="button" id="toggleLoginPassword" class="toggle-password" onclick="togglePasswordVisibilityUser('loginPassword', this)">نمایش</button>
+            </div>
+            <button onclick="handleUnifiedLogin()">ورود</button>
+            <div id="loginMessageArea" class="messageArea hidden"></div>
+        </div>
+
+        <!-- داشبورد کاربر ثبت‌شده - در ابتدا مخفی -->
+        <div id="registeredUserDashboardSection" class="hidden registered-user-dashboard-section">
+             <div class="dashboard-header">
+                <h2 id="registeredUserWelcomeMessage" style="margin-bottom:0; text-align:right;"></h2>
+                <button onclick="logout()" class="btn-danger btn-logout">خروج</button>
+            </div>
+            <div id="registeredUserMainContent">
+                <div id="assignedVisitsContainer">
+                    <h3>بازدیدهای اختصاص یافته به شما (تکمیل نشده):</h3>
+                    <div id="assignedVisitsList">
+                        <p class="no-data-message">در حال بارگذاری بازدیدهای شما...</p>
+                        <!-- آیتم‌های بازدید در اینجا توسط جاوااسکریپت ساخته می‌شوند -->
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button onclick="showChangePasswordForm()" class="btn-secondary" style="width: auto; padding: 0.6rem 1.5rem;">تغییر رمز عبور</button>
+                </div>
+            </div>
+
+            <div id="changePasswordOwnFormContainer" class="hidden form-container" style="max-width: 550px; margin: 2rem auto;">
+                <h3>تغییر رمز عبور</h3>
+                <div>
+                    <label for="currentPassword">رمز عبور فعلی:</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="password-wrapper">
+                    <label for="newPasswordOwn">رمز عبور جدید:</label>
+                    <input type="password" id="newPasswordOwn" required>
+                     <button type="button" class="toggle-password" onclick="togglePasswordVisibilityUser('newPasswordOwn', this)">نمایش</button>
+                </div>
+                <div class="password-wrapper">
+                    <label for="confirmNewPasswordOwn">تکرار رمز عبور جدید:</label>
+                    <input type="password" id="confirmNewPasswordOwn" required>
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibilityUser('confirmNewPasswordOwn', this)">نمایش</button>
+                </div>
+                <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                    <button onclick="handleChangeOwnPassword()" style="flex:1;" class="btn-primary">تغییر رمز</button>
+                    <button type="button" onclick="hideChangePasswordForm()" class="btn-secondary" style="flex:1; margin-top:0;">انصراف</button>
+                </div>
+                <div id="changePasswordOwnMessageArea" class="messageArea hidden"></div>
+            </div>
+        </div>
+
+        <!-- بخش فرم ارزیابی کاربر - در ابتدا مخفی -->
+        <div id="userFormSection" class="hidden user-form-section">
+            <div class="form-header">
+                <h2 style="margin-bottom: 0.5rem;">فرم اصلی بازدید</h2>
+                <button onclick="logout()" class="btn-danger btn-sm btn-cancel-form">لغو و خروج</button>
+            </div>
+            <p id="userWelcomeMessage" class="form-view-info"></p>
+            <div id="formNavigation" class="form-navigation-viewer">
+                 <!-- دکمه‌های ناوبری فرم در اینجا توسط جاوااسکریپت ساخته می‌شوند -->
+            </div>
+            <div id="formSectionsContainer" style="padding-top: 10px;">
+                 <!-- بخش‌های فرم در اینجا توسط جاوااسکریپت ساخته می‌شوند -->
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:2rem; padding-top:1rem; border-top: 1px solid #eee;">
+                <button onclick="submitUserForm()" class="btn-success" style="font-size: 1.1rem; padding: 0.8rem; flex:2;">تأیید نهایی و ارسال</button>
+                <button onclick="downloadUserFormAsPDF()" id="downloadUserFormPdfButton" class="btn-secondary" style="margin-top:0; flex:1; display: none;">دانلود پیش‌نویس PDF</button>
+            </div>
+            <div id="userFormMessageArea" class="messageArea hidden"></div>
+        </div>
+    </div>
+
+    <script src="user.js"></script> <!-- لینک به فایل JavaScript کاربر -->
+</body>
+</html>
