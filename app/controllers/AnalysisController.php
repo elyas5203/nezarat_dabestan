@@ -65,9 +65,7 @@ class AnalysisController {
     public function generateGenericContent($user_prompt) {
         $analyses_summary = $this->getRecentAnalysesSummary();
 
-        $prompt = "You are an expert digital marketer for a luxury and regular stationery business named 'AresAi'. Your goal is to increase sales. Based on the following summary of competitor analysis and the user's request, generate creative and effective marketing content. Be friendly and use a conversational tone in Persian.\n\n";
-        $prompt .= "Competitor Analysis Summary:\n" . $analyses_summary . "\n\n";
-        $prompt .= "User Request: " . $user_prompt;
+        $prompt = "You are a creative digital marketer for a stationery brand. Your task is to write marketing content in Persian based on a user request and competitor analysis. Be conversational and friendly.\n\n### Competitor Analysis Summary:\n{$analyses_summary}\n\n### User Request:\n{$user_prompt}\n\n### Your Content:";
 
         return $this->ollama->generate($prompt);
     }
@@ -87,17 +85,20 @@ class AnalysisController {
     public function getChatResponse($history) {
         $analyses_summary = $this->getRecentAnalysesSummary();
 
-        $system_prompt = "You are a friendly and expert business consultant for 'AresAi', a stationery company. Your goal is to help the user increase their sales. Use the provided competitor analysis summary and the conversation history to give actionable advice. Speak in a conversational Persian tone. Keep your answers concise and helpful.";
+        // Building a simpler, more direct prompt.
+        $system_prompt = "You are 'Ares', a helpful and friendly AI assistant for a stationery business. Your goal is to give concise and actionable advice in Persian to help the user. Use the competitor analysis summary to inform your answers.";
 
-        $prompt = $system_prompt . "\n\nCompetitor Analysis Summary:\n" . $analyses_summary . "\n\nConversation History:\n";
+        $prompt = "### System Prompt\n" . $system_prompt;
+        $prompt .= "\n\n### Competitor Analysis Summary:\n" . $analyses_summary;
 
+        $conversation = "";
         foreach ($history as $message) {
-            $prompt .= $message['role'] . ": " . $message['content'] . "\n";
+            $conversation .= "\n" . ($message['role'] === 'user' ? 'User' : 'Assistant') . ": " . $message['content'];
         }
-        $prompt .= "assistant: ";
 
-        // Here we're just sending the history back to the model.
-        // A more advanced implementation would use a model that explicitly supports conversational history.
+        $prompt .= "\n\n### Conversation History:" . $conversation;
+        $prompt .= "\n\nAssistant: ";
+
         return $this->ollama->generate($prompt);
     }
 

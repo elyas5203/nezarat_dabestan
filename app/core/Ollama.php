@@ -11,6 +11,7 @@ class Ollama {
     }
 
     public function generate($prompt) {
+        $this->log("Request Prompt: " . $prompt);
         $data = [
             'model' => $this->model,
             'prompt' => $prompt,
@@ -26,31 +27,38 @@ class Ollama {
             'Content-Type: application/json',
             'Content-Length: ' . strlen($json_data)
         ]);
-        // Add a timeout to prevent long waits
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60); // 60 seconds timeout
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
         $result = curl_exec($ch);
         $error = curl_error($ch);
         curl_close($ch);
 
         if ($error) {
-            // Log the actual error for debugging
-            error_log("cURL Error: " . $error);
+            $this->log("cURL Error: " . $error);
             return "Error communicating with Ollama API.";
         }
 
         if ($result === false) {
+            $this->log("No response from Ollama API.");
             return "Error: No response from Ollama API.";
         }
 
+        $this->log("Raw Response: " . $result);
         $response = json_decode($result, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            // Log the invalid JSON for debugging
-            error_log("Invalid JSON response from Ollama: " . $result);
+            $this->log("Invalid JSON response: " . $result);
             return "Error: Invalid response from model.";
         }
 
-        return $response['response'] ?? 'No response from model.';
+        $final_response = $response['response'] ?? 'No response from model.';
+        $this->log("Final Response: " . $final_response);
+        return $final_response;
+    }
+
+    private function log($message) {
+        $logFile = __DIR__ . '/../../ollama_log.txt';
+        $timestamp = date('Y-m-d H:i:s');
+        file_put_contents($logFile, "[$timestamp] " . $message . "\n", FILE_APPEND);
     }
 }
 ?>

@@ -24,16 +24,20 @@ class CompetitorController {
     }
 
     public function searchCompetitor($name) {
-        $prompt = "Find the official website and Instagram page for a company named '{$name}'. I am looking for a luxury and regular stationery company. Please provide the URLs in JSON format, for example: {\"website\": \"https://example.com\", \"instagram\": \"https://instagram.com/example\"}. If you can't find one, return null for that field.";
+        $prompt = "Task: Find the official website and Instagram URL for a stationery company named '{$name}'.\nResponse format: JSON (e.g., {\"website\": \"URL\", \"instagram\": \"URL\"}).\nIf a URL is not found, use null for its value.";
+
         $response = $this->ollama->generate($prompt);
 
-        // Basic parsing of the JSON from the response string
-        preg_match('/\{.*\}/s', $response, $matches);
-        if (isset($matches[0])) {
-            return json_decode($matches[0], true);
+        // Extract JSON from the response, which might be wrapped in text or code blocks.
+        if (preg_match('/\{[^{}]+\}/s', $response, $matches)) {
+            $json_part = $matches[0];
+            $decoded = json_decode($json_part, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $decoded;
+            }
         }
 
-        return null;
+        return ['website' => null, 'instagram' => null];
     }
 
     public function getAllCompetitors() {
