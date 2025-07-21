@@ -36,6 +36,19 @@ class CompetitorController {
         return null;
     }
 
+    public function getAllCompetitors() {
+        $result = $this->db->query("SELECT * FROM competitors ORDER BY created_at DESC");
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+
+    public function deleteCompetitor($id) {
+        $stmt = $this->db->prepare("DELETE FROM competitors WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
     public function __destruct() {
         $this->db->close();
     }
