@@ -15,25 +15,31 @@ $total_analyses = $conn->query("SELECT COUNT(*) as count FROM analyses")->fetch_
 $conn->close();
 ?>
 
-<h1>داشبورد اصلی</h1>
-<p>به مرکز فرماندهی دستیار هوشمند خود خوش آمدید.</p>
-
-<div class="stats-container">
-    <div class="stat-card">
-        <h3>تعداد رقبا</h3>
-        <p><?php echo $total_competitors; ?></p>
-    </div>
-    <div class="stat-card">
-        <h3>تعداد تحلیل ها</h3>
-        <p><?php echo $total_analyses; ?></p>
-    </div>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">داشبورد اصلی</h1>
 </div>
 
-<style>
-    .stats-container { display: flex; gap: 20px; margin-top: 20px; }
-    .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex-grow: 1; }
-    .stat-card h3 { margin: 0 0 10px; }
-    .stat-card p { font-size: 2em; margin: 0; }
-</style>
+<p>به مرکز فرماندهی دستیار هوشمند خود خوش آمدید.</p>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">تعداد رقبا</h5>
+                <p class="card-text fs-1"><?php echo $total_competitors; ?></p>
+                <a href="manage_competitors.php" class="btn btn-primary">مدیریت رقبا</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">تعداد تحلیل ها</h5>
+                <p class="card-text fs-1"><?php echo $total_analyses; ?></p>
+                <a href="view_analyses.php" class="btn btn-success">مشاهده تحلیل ها</a>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php require_once 'dashboard_footer.php'; ?>

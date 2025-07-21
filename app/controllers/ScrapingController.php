@@ -1,21 +1,23 @@
 <?php
+<?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/CompetitorController.php';
 require_once __DIR__ . '/AnalysisController.php';
 
-use Goutte\Client;
+use Symfony\Component\BrowserKit\HttpBrowser;
+use Symfony\Component\HttpClient\HttpClient;
 
 class ScrapingController {
     private $db;
-    private $client;
+    private $browser;
 
     public function __construct() {
         $this->db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
         if ($this->db->connect_error) {
             die("Connection failed: " . $this->db->connect_error);
         }
-        $this->client = new Client();
+        $this->browser = new HttpBrowser(HttpClient::create());
     }
 
     public function fetchAllCompetitorData() {
@@ -26,27 +28,25 @@ class ScrapingController {
             if (!empty($competitor['website'])) {
                 $this->fetchWebsiteData($competitor['id'], $competitor['website']);
             }
-            // Instagram scraping is very complex and often blocked.
-            // A real solution requires using their official API (Graph API), which is beyond the scope of this implementation.
-            // We will simulate this part for now.
+            // Instagram scraping remains a complex issue best handled by official APIs.
         }
     }
 
     public function fetchWebsiteData($competitor_id, $url) {
         try {
-            $crawler = $this->client->request('GET', $url);
+            $crawler = $this->browser->request('GET', $url);
 
             // Extract title
-            $title = $crawler->filter('title')->first()->text();
+            $title = $crawler->filter('title')->first()->text('No title found');
 
             // Extract meta description
-            $description = $crawler->filter('meta[name="description"]')->first()->attr('content');
+            $descriptionNode = $crawler->filter('meta[name="description"]');
+            $description = $descriptionNode->count() > 0 ? $descriptionNode->first()->attr('content') : 'No description found';
 
             // Extract all text from the body
-            $body_text = $crawler->filter('body')->first()->text();
-            $clean_body_text = preg_replace('/\s+/', ' ', $body_text); // Clean up whitespace
+            $body_text = $crawler->filter('body')->first()->text('');
+            $clean_body_text = preg_replace('/\s+/', ' ', $body_text);
 
-            // For now, we just print it. Later we will save this to be analyzed.
             echo "Fetched from {$url}: Title - {$title}<br>";
 
             // Pass the content to the analysis controller

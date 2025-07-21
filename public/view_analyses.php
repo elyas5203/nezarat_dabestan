@@ -6,54 +6,63 @@ $controller = new AnalysisController();
 $analyses = $controller->getAllAnalyses();
 ?>
 
-<h1>مشاهده تحلیل ها</h1>
-<p>در این بخش می توانید آخرین تحلیل های انجام شده روی محتوای رقبای خود را مشاهده کنید.</p>
-
-<style>
-    .analysis-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .analysis-card h3 { margin: 0 0 10px; }
-    .analysis-card .meta { font-size: 0.9em; color: #666; margin-bottom: 10px; }
-    .badge { background-color: #eee; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px; }
-</style>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">مشاهده تحلیل ها</h1>
+    <a href="cron_fetch.php" target="_blank" class="btn btn-sm btn-outline-success">شروع تحلیل جدید</a>
+</div>
+<p>در این بخش می توانید آخرین تحلیل های انجام شده روی محتوay رقبای خود را مشاهده کنید.</p>
 
 <?php if (empty($analyses)): ?>
-    <p>هنوز هیچ تحلیلی انجام نشده است. برای شروع، از بخش مدیریت رقبا، رقیب اضافه کرده و سپس اسکریپت <a href="cron_fetch.php" target="_blank">جمع آوری و تحلیل داده</a> را اجرا کنید.</p>
+    <div class="alert alert-info" role="alert">
+        هنوز هیچ تحلیلی انجام نشده است. برای شروع، از بخش <a href="manage_competitors.php" class="alert-link">مدیریت رقبا</a>، رقیب اضافه کرده و سپس دکمه "شروع تحلیل جدید" را بزنید.
+    </div>
 <?php else: ?>
-    <?php foreach ($analyses as $analysis): ?>
-        <div class="analysis-card">
-            <h3>تحلیل برای: <?php echo htmlspecialchars($analysis['competitor_name']); ?></h3>
-            <div class="meta">
-                <span>نوع محتوا: <?php echo htmlspecialchars($analysis['content_type']); ?></span> |
-                <span>تاریخ: <?php echo $analysis['created_at']; ?></span>
+    <div class="row">
+        <?php foreach ($analyses as $analysis): ?>
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        تحلیل برای: <strong><?php echo htmlspecialchars($analysis['competitor_name']); ?></strong>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">خلاصه تحلیل</h5>
+                        <p class="card-text"><?php echo htmlspecialchars($analysis['analysis_summary']); ?></p>
+
+                        <h6>کلمات کلیدی شناسایی شده:</h6>
+                        <p>
+                            <?php
+                            $keywords = json_decode($analysis['keywords']);
+                            if ($keywords) {
+                                foreach ($keywords as $keyword) {
+                                    echo '<span class="badge bg-primary me-1">' . htmlspecialchars($keyword) . '</span>';
+                                }
+                            } else {
+                                echo '<span class="badge bg-secondary">موردی یافت نشد</span>';
+                            }
+                            ?>
+                        </p>
+
+                        <h6>محصولات تبلیغ شده:</h6>
+                        <p>
+                            <?php
+                            $products = json_decode($analysis['products_promoted']);
+                            if ($products) {
+                                foreach ($products as $product) {
+                                    echo '<span class="badge bg-info me-1">' . htmlspecialchars($product) . '</span>';
+                                }
+                            } else {
+                                echo '<span class="badge bg-secondary">موردی یافت نشد</span>';
+                            }
+                            ?>
+                        </p>
+                    </div>
+                    <div class="card-footer text-muted">
+                        نوع محتوا: <?php echo htmlspecialchars($analysis['content_type']); ?> | تاریخ: <?php echo $analysis['created_at']; ?>
+                    </div>
+                </div>
             </div>
-            <h4>خلاصه تحلیل:</h4>
-            <p><?php echo htmlspecialchars($analysis['analysis_summary']); ?></p>
-
-            <h4>کلمات کلیدی شناسایی شده:</h4>
-            <p>
-                <?php
-                $keywords = json_decode($analysis['keywords']);
-                if ($keywords) {
-                    foreach ($keywords as $keyword) {
-                        echo '<span class="badge">' . htmlspecialchars($keyword) . '</span>';
-                    }
-                }
-                ?>
-            </p>
-
-            <h4>محصولات تبلیغ شده:</h4>
-            <p>
-                <?php
-                $products = json_decode($analysis['products_promoted']);
-                if ($products) {
-                    foreach ($products as $product) {
-                        echo '<span class="badge">' . htmlspecialchars($product) . '</span>';
-                    }
-                }
-                ?>
-            </p>
-        </div>
-    <?php endforeach; ?>
+        <?php endforeach; ?>
+    </div>
 <?php endif; ?>
 
 

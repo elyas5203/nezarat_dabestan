@@ -16,42 +16,42 @@ $competitors = $controller->getAllCompetitors();
 
 ?>
 
-<h1>مدیریت رقبا</h1>
-<a href="search_competitor.php" class="button">افزودن رقیب جدید (جستجوی هوشمند)</a>
-<a href="add_competitor.php" class="button">افزودن رقیب جدید (دستی)</a>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">مدیریت رقبا</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="search_competitor.php" class="btn btn-sm btn-outline-primary me-2">افزودن با جستجوی هوشمند</a>
+        <a href="add_competitor.php" class="btn btn-sm btn-outline-secondary">افزودن دستی</a>
+    </div>
+</div>
 
-<style>
-    .button { display: inline-block; padding: 10px 15px; background: #5cb85c; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-    th { background-color: #f2f2f2; }
-    .delete-button { background: #d9534f; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
-</style>
-
-<table>
-    <thead>
-        <tr>
-            <th>نام</th>
-            <th>وب سایت</th>
-            <th>اینستاگرام</th>
-            <th>عملیات</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($competitors as $competitor): ?>
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
             <tr>
-                <td><?php echo htmlspecialchars($competitor['name']); ?></td>
-                <td><a href="<?php echo htmlspecialchars($competitor['website']); ?>" target="_blank"><?php echo htmlspecialchars($competitor['website']); ?></a></td>
-                <td><a href="<?php echo htmlspecialchars($competitor['instagram']); ?>" target="_blank"><?php echo htmlspecialchars($competitor['instagram']); ?></a></td>
-                <td>
-                    <form action="manage_competitors.php" method="post" style="display:inline;">
-                        <input type="hidden" name="delete_id" value="<?php echo $competitor['id']; ?>">
-                        <button type="submit" class="delete-button" onclick="return confirm('آیا از حذف این رقیب مطمئن هستید؟')">حذف</button>
-                    </form>
-                </td>
+                <th scope="col">#</th>
+                <th scope="col">نام</th>
+                <th scope="col">وب سایت</th>
+                <th scope="col">اینستاگرام</th>
+                <th scope="col">عملیات</th>
             </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            <?php foreach ($competitors as $index => $competitor): ?>
+                <tr>
+                    <td><?php echo $index + 1; ?></td>
+                    <td><?php echo htmlspecialchars($competitor['name']); ?></td>
+                    <td><a href="<?php echo htmlspecialchars($competitor['website']); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($competitor['website']); ?></a></td>
+                    <td><a href="<?php echo htmlspecialchars($competitor['instagram']); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($competitor['instagram']); ?></a></td>
+                    <td>
+                        <form action="manage_competitors.php" method="post" class="d-inline">
+                            <input type="hidden" name="delete_id" value="<?php echo $competitor['id']; ?>">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('آیا از حذف این رقیب مطمئن هستید؟')">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
 
 <?php require_once 'dashboard_footer.php'; ?>

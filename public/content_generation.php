@@ -11,25 +11,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !empty($_POST['prompt'])) {
 }
 ?>
 
-<h1>تولید محتوا با هوش مصنوعی</h1>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">تولید محتوا با هوش مصنوعی</h1>
+</div>
 <p>از دستیار هوشمند خود بخواهید تا بر اساس تحلیل های انجام شده و نیاز شما، محتوای خلاقانه تولید کند.</p>
 
-<form action="content_generation.php" method="post">
-    <label for="prompt">چه نوع محتوایی نیاز دارید؟ (مثال: یک کپشن برای اینستاگرام در مورد دفترهای جدیدمان بنویس)</label><br>
-    <textarea id="prompt" name="prompt" rows="4" style="width: 100%;" required></textarea><br><br>
-    <input type="submit" value="تولید کن">
-</form>
+<div class="card">
+    <div class="card-body">
+        <form action="content_generation.php" method="post">
+            <div class="mb-3">
+                <label for="prompt" class="form-label">چه نوع محتوایی نیاز دارید؟</label>
+                <textarea class="form-control" id="prompt" name="prompt" rows="3" placeholder="مثال: یک کپشن برای اینستاگرام در مورد دفترهای جدیدمان بنویس" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">تولید کن</button>
+        </form>
+    </div>
+</div>
 
 <?php if (!empty($generated_content)): ?>
-    <h2>محتوای تولید شده:</h2>
-    <div class="generated-content-box">
-        <pre><?php echo htmlspecialchars($generated_content); ?></pre>
+<div class="card mt-4">
+    <div class="card-header">
+        محتوای تولید شده
     </div>
+    <div class="card-body">
+        <pre style="white-space: pre-wrap; font-family: inherit;"><?php echo htmlspecialchars($generated_content); ?></pre>
+    </div>
+</div>
 <?php endif; ?>
-
-<style>
-    .generated-content-box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; white-space: pre-wrap; font-family: inherit; }
-    textarea { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-</style>
 
 <?php require_once 'dashboard_footer.php'; ?>
