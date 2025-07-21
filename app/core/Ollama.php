@@ -16,23 +16,40 @@ class Ollama {
             'prompt' => $prompt,
             'stream' => false
         ];
+        $json_data = json_encode($data);
 
-        $options = [
-            'http' => [
-                'header' => "Content-type: application/json\r\n",
-                'method' => 'POST',
-                'content' => json_encode($data)
-            ]
-        ];
+        $ch = curl_init($this->apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($json_data)
+        ]);
+        // Add a timeout to prevent long waits
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60); // 60 seconds timeout
 
-        $context = stream_context_create($options);
-        $result = file_get_contents($this->apiUrl, false, $context);
+        $result = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-        if ($result === FALSE) {
+        if ($error) {
+            // Log the actual error for debugging
+            error_log("cURL Error: " . $error);
             return "Error communicating with Ollama API.";
         }
 
+        if ($result === false) {
+            return "Error: No response from Ollama API.";
+        }
+
         $response = json_decode($result, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // Log the invalid JSON for debugging
+            error_log("Invalid JSON response from Ollama: " . $result);
+            return "Error: Invalid response from model.";
+        }
+
         return $response['response'] ?? 'No response from model.';
     }
 }
