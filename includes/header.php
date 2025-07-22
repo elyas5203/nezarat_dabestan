@@ -36,6 +36,7 @@ if (!function_exists('has_permission')) {
             <li class="nav-section-title"><span>ویژه مدرس</span></li>
             <li><a href="/dabestan/user/my_classes.php"><i data-feather="book-open"></i><span>کلاس‌های من</span></a></li>
             <li><a href="/dabestan/user/list_forms.php"><i data-feather="file-text"></i><span>فرم‌های خوداظهاری</span></a></li>
+            <li><a href="/dabestan/user/view_analysis.php"><i data-feather="trending-up"></i><span>تحلیل عملکرد من</span></a></li>
 
             <li class="nav-section-title"><span>ارتباطات</span></li>
              <li class="has-submenu">
@@ -59,6 +60,9 @@ if (!function_exists('has_permission')) {
                 <a href="#"><i data-feather="eye"></i><span>نظارت</span><i class="submenu-arrow" data-feather="chevron-left"></i></a>
                 <ul class="submenu">
                     <li><a href="/dabestan/admin/view_all_assessments.php"><span>مشاهده خوداظهاری‌ها</span></a></li>
+                    <?php if(has_permission('view_analysis')): ?>
+                    <li><a href="/dabestan/admin/self_assessment_analysis.php"><span>تحلیل پیشرفته</span></a></li>
+                    <?php endif; ?>
                 </ul>
             </li>
             <li class="has-submenu">
