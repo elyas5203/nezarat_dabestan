@@ -8,6 +8,10 @@ define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
 define('DB_NAME', 'dabestan_db');
 
+/* Telegram Bot Token */
+// It's recommended to store this in a more secure way, e.g., environment variables
+$telegram_bot_token = 'YOUR_BOT_TOKEN'; // <--- PASTE YOUR ACTUAL BOT TOKEN HERE
+
 /* Attempt to connect to MySQL database */
 $link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 

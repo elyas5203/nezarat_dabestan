@@ -1,0 +1,1 @@
+ALTER TABLE inventory_items ADD COLUMN is_rentable BOOLEAN NOT NULL DEFAULT FALSE;

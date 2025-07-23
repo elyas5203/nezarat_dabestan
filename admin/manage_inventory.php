@@ -90,7 +90,11 @@ require_once "../includes/header.php";
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="form-group">
+<div class="form-check">
+                <input type="checkbox" class="form-check-input" id="is_rentable" name="is_rentable" value="1">
+                <label class="form-check-label" for="is_rentable">این کالا توسط مدرسان قابل کرایه است</label>
+            </div>
+            <div class="form-group mt-3">
                 <input type="submit" name="add_item" class="btn btn-primary" value="افزودن قلم">
             </div>
         </form>
@@ -105,22 +109,30 @@ require_once "../includes/header.php";
                     <th>نام قلم</th>
                     <th>دسته‌بندی</th>
                     <th>تعداد موجود</th>
+                    <th>قابل کرایه</th>
                     <th>توضیحات</th>
                     <th>عملیات</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
-                    <tr><td colspan="5" style="text-align: center;">هیچ قلمی در انبار ثبت نشده است.</td></tr>
+                    <tr><td colspan="6" style="text-align: center;">هیچ قلمی در انبار ثبت نشده است.</td></tr>
                 <?php else: ?>
                     <?php foreach ($items as $item): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($item['name']); ?></td>
                             <td><?php echo htmlspecialchars($item['category_name'] ?? 'N/A'); ?></td>
                             <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                            <td>
+                                <?php if(!empty($item['is_rentable']) && $item['is_rentable']): ?>
+                                    <span class="badge bg-success">بله</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">خیر</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo htmlspecialchars($item['description']); ?></td>
                             <td>
-                                <a href="#" class="btn btn-secondary btn-sm">ویرایش</a>
+                                <a href="edit_item.php?id=<?php echo $item['id']; ?>" class="btn btn-secondary btn-sm">ویرایش</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

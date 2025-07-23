@@ -1,148 +1,163 @@
 <?php
 session_start();
 require_once "../includes/db.php";
+require_once "../includes/functions.php";
 
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: ../index.php");
     exit;
 }
 
+$user_id = $_SESSION['id'];
 $err = $success_msg = "";
 
-// Handle Rent Request
-if (isset($_GET['rent_item_id'])) {
-    $item_to_rent = $_GET['rent_item_id'];
+// Handle Rental Request Submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['request_items'])) {
+    $requested_items = isset($_POST['items']) ? $_POST['items'] : [];
+    $event_date = !empty($_POST['event_date']) ? $_POST['event_date'] : null;
+    $notes = trim($_POST['notes']);
 
-    mysqli_begin_transaction($link);
-    try {
-        // 1. Check if item is available
-        $sql_check = "SELECT quantity FROM inventory_items WHERE id = ? FOR UPDATE";
-        $stmt_check = mysqli_prepare($link, $sql_check);
-        mysqli_stmt_bind_param($stmt_check, "i", $item_to_rent);
-        mysqli_stmt_execute($stmt_check);
-        $result_check = mysqli_stmt_get_result($stmt_check);
-        $item = mysqli_fetch_assoc($result_check);
+    if (empty($requested_items)) {
+        $err = "شما باید حداقل یک قلم را برای درخواست انتخاب کنید.";
+    } elseif (empty($event_date)) {
+        $err = "لطفا تاریخ مراسم یا نیاز خود را مشخص کنید.";
+    } else {
+        // Create a ticket for the rental request
+        $ticket_title = "درخواست کرایه لوازم برای تاریخ " . to_persian_date($event_date, 'Y/m/d');
 
-        if ($item && $item['quantity'] > 0) {
-            // 2. Decrement quantity
-            $sql_update = "UPDATE inventory_items SET quantity = quantity - 1 WHERE id = ?";
-            $stmt_update = mysqli_prepare($link, $sql_update);
-            mysqli_stmt_bind_param($stmt_update, "i", $item_to_rent);
-            mysqli_stmt_execute($stmt_update);
+        $message_body = "کاربر: " . $_SESSION['username'] . "\n";
+        $message_body .= "تاریخ نیاز: " . to_persian_date($event_date, 'Y/m/d') . "\n";
+        $message_body .= "توضیحات: " . $notes . "\n\n";
+        $message_body .= "لیست لوازم درخواستی:\n";
 
-            // 3. Log the rental
-            $sql_log = "INSERT INTO item_rentals (item_id, user_id, rent_date) VALUES (?, ?, NOW())";
-            $stmt_log = mysqli_prepare($link, $sql_log);
-            mysqli_stmt_bind_param($stmt_log, "ii", $item_to_rent, $_SESSION['id']);
-            mysqli_stmt_execute($stmt_log);
+        $item_ids_for_query = array_keys($requested_items);
+        $sql_items_info = "SELECT id, name FROM inventory_items WHERE id IN (" . implode(',', $item_ids_for_query) . ")";
+        $items_info_result = mysqli_query($link, $sql_items_info);
+        $items_db_info = mysqli_fetch_all($items_info_result, MYSQLI_ASSOC);
+        $items_map = array_column($items_db_info, 'name', 'id');
 
-            mysqli_commit($link);
-            $success_msg = "درخواست شما با موفقیت ثبت شد. جهت تحویل کالا با مسئول مربوطه هماهنگ کنید.";
-        } else {
-            $err = "متاسفانه این قلم در حال حاضر موجود نیست.";
-            mysqli_rollback($link);
+        foreach($requested_items as $item_id => $quantity) {
+             if (isset($items_map[$item_id])) {
+                $message_body .= "- " . htmlspecialchars($items_map[$item_id]) . " (تعداد: " . htmlspecialchars($quantity) . ")\n";
+             }
         }
-    } catch (mysqli_sql_exception $exception) {
-        mysqli_rollback($link);
-        $err = "خطایی در ثبت درخواست رخ داد.";
+
+        // Find users with 'manage_inventory' permission to assign the ticket
+        $assign_to_user_id = null; // Assign to admin by default
+        $admin_user_query = mysqli_query($link, "SELECT id FROM users WHERE is_admin = 1 LIMIT 1");
+        if(mysqli_num_rows($admin_user_query) > 0) {
+            $assign_to_user_id = mysqli_fetch_assoc($admin_user_query)['id'];
+        }
+
+        $sql_ticket = "INSERT INTO tickets (title, message, user_id, assigned_to_user_id, status, priority, created_at) VALUES (?, ?, ?, ?, 'open', 'high', NOW())";
+        if($stmt = mysqli_prepare($link, $sql_ticket)){
+            mysqli_stmt_bind_param($stmt, "ssii", $ticket_title, $message_body, $user_id, $assign_to_user_id);
+            if(mysqli_stmt_execute($stmt)){
+                $ticket_id = mysqli_insert_id($link);
+                $success_msg = "درخواست شما با موفقیت در قالب تیکت شماره $ticket_id ثبت شد. نتیجه از طریق همین تیکت به شما اطلاع داده خواهد شد.";
+                // Optionally, send a notification
+                if($assign_to_user_id) {
+                    $notif_msg = "یک درخواست کرایه جدید ثبت شد.";
+                    $notif_link = "user/view_ticket.php?id=$ticket_id";
+                    $sql_notif = "INSERT INTO notifications (user_id, message, link, type) VALUES (?, ?, ?, 'ticket')";
+                    if($stmt_notif = mysqli_prepare($link, $sql_notif)){
+                        mysqli_stmt_bind_param($stmt_notif, "iss", $assign_to_user_id, $notif_msg, $notif_link);
+                        mysqli_stmt_execute($stmt_notif);
+                    }
+                }
+            } else {
+                $err = "خطا در ثبت درخواست. لطفا دوباره تلاش کنید.";
+            }
+        }
     }
 }
 
-
-// Fetch categories for the filter dropdown
-$categories = [];
-$sql_categories = "SELECT id, name FROM inventory_categories ORDER BY name ASC";
-if($result_cat = mysqli_query($link, $sql_categories)){
-    $categories = mysqli_fetch_all($result_cat, MYSQLI_ASSOC);
-}
-
-
-// Fetch all available inventory items
-$base_sql_items = "SELECT i.id, i.name, i.description, i.quantity, c.name as category_name
-                   FROM inventory_items i
-                   LEFT JOIN inventory_categories c ON i.category_id = c.id
-                   WHERE i.quantity > 0";
-
-$selected_category = '';
-if(isset($_GET['category_id']) && !empty($_GET['category_id'])){
-    $selected_category = $_GET['category_id'];
-    $base_sql_items .= " AND i.category_id = ?";
-}
-$base_sql_items .= " ORDER BY i.name ASC";
-
+// Fetch all available and rentable inventory items
 $items = [];
-if($stmt_items = mysqli_prepare($link, $base_sql_items)){
-    if(!empty($selected_category)){
-        mysqli_stmt_bind_param($stmt_items, "i", $selected_category);
-    }
-    mysqli_stmt_execute($stmt_items);
-    $result_items = mysqli_stmt_get_result($stmt_items);
+$sql_items = "SELECT i.id, i.name, i.description, i.quantity, c.name as category_name
+              FROM inventory_items i
+              LEFT JOIN inventory_categories c ON i.category_id = c.id
+              WHERE i.quantity > 0 AND i.is_rentable = 1
+              ORDER BY c.name, i.name ASC";
+if($result_items = mysqli_query($link, $sql_items)){
     $items = mysqli_fetch_all($result_items, MYSQLI_ASSOC);
-    mysqli_stmt_close($stmt_items);
 }
 
-
-mysqli_close($link);
 require_once "../includes/header.php";
 ?>
+<style>
+    .item-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+</style>
 
 <div class="page-content">
-    <h2>لیست اقلام کرایه‌چی</h2>
-    <p>در این بخش لیست اقلام قابل کرایه را مشاهده و درخواست خود را ثبت کنید.</p>
+    <h2>درخواست کرایه لوازم</h2>
+    <p>لیست لوازم قابل کرایه را مشاهده و موارد مورد نیاز خود را به همراه تعداد انتخاب کنید. درخواست شما برای مسئول مربوطه ارسال خواهد شد.</p>
 
     <?php
     if(!empty($err)){ echo '<div class="alert alert-danger">' . $err . '</div>'; }
     if(!empty($success_msg)){ echo '<div class="alert alert-success">' . $success_msg . '</div>'; }
     ?>
 
-    <!-- Filter Form -->
-    <div class="form-container" style="margin-bottom: 20px;">
-        <form action="rental_items.php" method="get">
-            <div class="form-group">
-                <label for="category_id">فیلتر بر اساس دسته‌بندی:</label>
-                <select name="category_id" id="category_id" class="form-control" onchange="this.form.submit()">
-                    <option value="">همه دسته‌بندی‌ها</option>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?php echo $category['id']; ?>" <?php if($selected_category == $category['id']) echo 'selected'; ?>>
-                            <?php echo htmlspecialchars($category['name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+    <form action="rental_items.php" method="post">
+        <div class="card">
+            <div class="card-header">
+                <h4>انتخاب لوازم</h4>
             </div>
-        </form>
-    </div>
-
-    <!-- Rental Items Table -->
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>نام قلم</th>
-                    <th>دسته‌بندی</th>
-                    <th>تعداد موجود</th>
-                    <th>توضیحات</th>
-                    <th>عملیات</th>
-                </tr>
-            </thead>
-            <tbody>
+            <div class="card-body">
                 <?php if (empty($items)): ?>
-                    <tr><td colspan="5" style="text-align: center;">هیچ قلمی با این مشخصات برای کرایه موجود نیست.</td></tr>
+                    <p>در حال حاضر هیچ قلمی برای کرایه موجود نیست.</p>
                 <?php else: ?>
+                    <div class="row">
                     <?php foreach ($items as $item): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($item['name']); ?></td>
-                            <td><?php echo htmlspecialchars($item['category_name'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($item['quantity']); ?></td>
-                            <td><?php echo htmlspecialchars($item['description']); ?></td>
-                            <td>
-                                <a href="rental_items.php?rent_item_id=<?php echo $item['id']; ?>" class="btn btn-primary btn-sm" onclick="return confirm('آیا از درخواست کرایه این قلم مطمئن هستید؟')">درخواست کرایه</a>
-                            </td>
-                        </tr>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="item-card">
+                                <h5><?php echo htmlspecialchars($item['name']); ?></h5>
+                                <p class="text-muted"><?php echo htmlspecialchars($item['category_name'] ?? 'بدون دسته'); ?></p>
+                                <p><?php echo htmlspecialchars($item['description']); ?></p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>موجودی: <?php echo htmlspecialchars($item['quantity']); ?></span>
+                                    <div class="input-group" style="width: 120px;">
+                                        <span class="input-group-text">تعداد</span>
+                                        <input type="number" name="items[<?php echo $item['id']; ?>]" class="form-control" min="0" max="<?php echo $item['quantity']; ?>" placeholder="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     <?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>اطلاعات درخواست</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="event_date">تاریخ نیاز <span class="text-danger">*</span></label>
+                            <input type="date" name="event_date" id="event_date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="notes">توضیحات اضافی</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group mt-4">
+            <button type="submit" name="request_items" class="btn btn-primary btn-lg">ثبت نهایی درخواست</button>
+        </div>
+    </form>
 </div>
 
-<?php require_once "../includes/footer.php"; ?>
+<?php
+mysqli_close($link);
+require_once "../includes/footer.php";
+?>

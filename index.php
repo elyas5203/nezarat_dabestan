@@ -38,17 +38,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password, $is_admin);
                     if (mysqli_stmt_fetch($stmt)) {
                         if (password_verify($password, $hashed_password)) {
-                            // session_start() is already called at the top of the script.
+                            // Update last login timestamp
+                            $update_sql = "UPDATE users SET last_login_at = NOW() WHERE id = ?";
+                            if($update_stmt = mysqli_prepare($link, $update_sql)){
+                                mysqli_stmt_bind_param($update_stmt, "i", $id);
+                                mysqli_stmt_execute($update_stmt);
+                                mysqli_stmt_close($update_stmt);
+                            }
+
+                            // Set session variables
                             $_SESSION["loggedin"] = true;
                             $_SESSION["id"] = $id;
                             $_SESSION["username"] = $username;
                             $_SESSION["is_admin"] = $is_admin;
 
+                            // Create a login notification
+                            $notification_message = "شما با موفقیت وارد سیستم شدید.";
+                            $insert_notification_sql = "INSERT INTO notifications (user_id, message, type, link) VALUES (?, ?, 'login', '/user/view_all_notifications.php')";
+                            if($notif_stmt = mysqli_prepare($link, $insert_notification_sql)){
+                                mysqli_stmt_bind_param($notif_stmt, "is", $id, $notification_message);
+                                mysqli_stmt_execute($notif_stmt);
+                                mysqli_stmt_close($notif_stmt);
+                            }
+
+                            // Redirect user
                             if($is_admin){
                                 header("location: admin/index.php");
                             } else {
                                 header("location: user/index.php");
                             }
+                            exit; // Exit after redirect
                         } else {
                             $err = "نام کاربری یا رمز عبور اشتباه است.";
                         }

@@ -37,8 +37,8 @@ require_once "../includes/header.php";
                         <td><?php echo htmlspecialchars($form['form_name']); ?></td>
                         <td><?php echo jdf("Y/m/d H:i", strtotime($form['updated_at'])); ?></td>
                         <td>
-                            <a href="design_form.php?form_id=<?php echo $form['id']; ?>" class="btn btn-primary btn-sm">ویرایش</a>
-                            <a href="fill_form.php?form_id=<?php echo $form['id']; ?>" class="btn btn-info btn-sm" target="_blank">پیش‌نمایش</a>
+<a href="edit_form.php?id=<?php echo $form['id']; ?>" class="btn btn-primary btn-sm">ویرایش/طراحی</a>
+<a href="../user/fill_form.php?form_id=<?php echo $form['id']; ?>" class="btn btn-info btn-sm" target="_blank">پیش‌نمایش</a>
                             <a href="delete_form.php?form_id=<?php echo $form['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('آیا از حذف این فرم مطمئن هستید؟');">حذف</a>
                         </td>
                     </tr>
