@@ -56,10 +56,11 @@ if (!empty($_GET['date_to'])) {
 $query = "
     SELECT
         fsub.submitted_at,
-        fsd.field_label,
+        ff.field_label,
         fsd.field_value
     FROM form_submission_data fsd
     JOIN form_submissions fsub ON fsd.submission_id = fsub.id
+    JOIN form_fields ff ON fsd.field_id = ff.id
     JOIN forms f ON fsub.form_id = f.id
     WHERE f.form_name LIKE '%خوداظهاری%'
     AND fsub.user_id = $user_id
