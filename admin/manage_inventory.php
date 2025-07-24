@@ -26,13 +26,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_item'])) {
     $description = trim($_POST['description']);
     $quantity = trim($_POST['quantity']);
     $category_id = trim($_POST['category_id']);
+    $is_rentable = isset($_POST['is_rentable']) ? 1 : 0;
+    $image_path = null;
 
-    if (empty($item_name) || !isset($quantity)) {
+    // Handle image upload
+    if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] == 0) {
+        $upload_dir = '../uploads/inventory/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        $file_name = uniqid() . '-' . basename($_FILES['item_image']['name']);
+        $target_file = $upload_dir . $file_name;
+
+        if (move_uploaded_file($_FILES['item_image']['tmp_name'], $target_file)) {
+            $image_path = 'uploads/inventory/' . $file_name;
+        } else {
+            $err = "خطا در آپلود عکس.";
+        }
+    }
+
+    if (empty($err) && (empty($item_name) || !isset($quantity))) {
         $err = "نام و تعداد قلم الزامی است.";
-    } else {
-        $sql = "INSERT INTO inventory_items (name, description, quantity, category_id) VALUES (?, ?, ?, ?)";
+    }
+
+    if (empty($err)) {
+        $sql = "INSERT INTO inventory_items (name, description, quantity, category_id, is_rentable, image_path) VALUES (?, ?, ?, ?, ?, ?)";
         if ($stmt = mysqli_prepare($link, $sql)) {
-            mysqli_stmt_bind_param($stmt, "ssii", $item_name, $description, $quantity, $category_id);
+            mysqli_stmt_bind_param($stmt, "ssiiis", $item_name, $description, $quantity, $category_id, $is_rentable, $image_path);
             if (mysqli_stmt_execute($stmt)) {
                 $success_msg = "قلم جدید با موفقیت به انبار اضافه شد.";
             } else {
@@ -90,8 +110,12 @@ require_once "../includes/header.php";
                     <?php endforeach; ?>
                 </select>
             </div>
-<div class="form-check">
-                <input type="checkbox" class="form-check-input" id="is_rentable" name="is_rentable" value="1">
+<div class="form-group">
+                <label for="item_image">عکس قلم</label>
+                <input type="file" name="item_image" id="item_image" class="form-control">
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="is_rentable" name="is_rentable" value="1" checked>
                 <label class="form-check-label" for="is_rentable">این کالا توسط مدرسان قابل کرایه است</label>
             </div>
             <div class="form-group mt-3">

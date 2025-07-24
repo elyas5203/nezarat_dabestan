@@ -156,13 +156,15 @@ require_once "../includes/header.php";
                                 case 'login': $icon = 'log-in'; $link = "edit_user.php?id={$activity['id']}"; break;
                             }
                         ?>
-                        <a href="<?php echo $link; ?>" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-start align-items-center">
-                                <i data-feather="<?php echo $icon; ?>" class="me-3"></i>
-                                <div>
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($title); ?></h6>
-                                    <small class="text-muted"><?php echo htmlspecialchars($activity['username']) . ' - ' . time_ago($activity['created_at']); ?></small>
+<a href="<?php echo $link; ?>" class="list-group-item list-group-item-action d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-light-primary p-2 rounded-circle">
+                                     <i data-feather="<?php echo $icon; ?>" style="color: var(--primary-color);"></i>
                                 </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0"><?php echo htmlspecialchars($title); ?></h6>
+                                <small class="text-muted"><?php echo htmlspecialchars($activity['username']) . ' • ' . time_ago($activity['created_at']); ?></small>
                             </div>
                         </a>
                         <?php endwhile; ?>

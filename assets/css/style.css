@@ -161,10 +161,26 @@ main { padding: 32px; }
 
 /* --- 4. Responsive --- */
 @media (max-width: 992px) {
-    .sidebar { right: -260px; }
-    .sidebar.active { right: 0; box-shadow: var(--shadow-lg); }
+    .sidebar { right: -280px; width: 280px; box-shadow: 0 0 20px rgba(0,0,0,0.25); }
+    .sidebar.active { right: 0; }
     .main-content { margin-right: 0; }
     .menu-toggle { display: block !important; }
+    main { padding: 16px; }
+    .page-content > h2 { font-size: 1.5rem; }
+}
+
+@media (max-width: 768px) {
+    .header-right { gap: 15px; }
+    header { padding: 0 16px; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+/* Rental Page Specific Responsive Styles */
+@media (max-width: 576px) {
+    .rental-items-grid .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
 }
 
 /* --- 5. Components --- */

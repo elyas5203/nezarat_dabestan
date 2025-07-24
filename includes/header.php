@@ -16,7 +16,8 @@ if (!function_exists('has_permission')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سامانه دبستان</title>
-    <link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+<link rel="stylesheet" href="/dabestan/assets/css/persian-datepicker.min.css">
+    <link rel="stylesheet" href="/dabestan/assets/css/simple-lightbox.min.css">
     <link rel="stylesheet" href="/dabestan/assets/css/style.css">
     <?php
     if (strpos($_SERVER['REQUEST_URI'], '/user/') !== false || strpos($_SERVER['REQUEST_URI'], '/admin/') !== false) {

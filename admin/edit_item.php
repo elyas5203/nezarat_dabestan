@@ -48,21 +48,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $quantity = trim($_POST['quantity']);
     $category_id = trim($_POST['category_id']);
     $is_rentable = isset($_POST['is_rentable']) ? 1 : 0;
+    $image_path = $item['image_path']; // Keep old image by default
 
-    if (empty($item_name) || !isset($quantity)) {
+    // Handle image upload
+    if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] == 0) {
+        $upload_dir = '../uploads/inventory/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        $file_name = uniqid() . '-' . basename($_FILES['item_image']['name']);
+        $target_file = $upload_dir . $file_name;
+
+        if (move_uploaded_file($_FILES['item_image']['tmp_name'], $target_file)) {
+            // New image uploaded successfully, delete old one if it exists
+            if (!empty($item['image_path']) && file_exists('../' . $item['image_path'])) {
+                unlink('../' . $item['image_path']);
+            }
+            $image_path = 'uploads/inventory/' . $file_name;
+        } else {
+            $err = "خطا در آپلود عکس.";
+        }
+    } elseif (isset($_POST['remove_image']) && $_POST['remove_image'] == '1') {
+        // Handle image removal
+        if (!empty($item['image_path']) && file_exists('../' . $item['image_path'])) {
+            unlink('../' . $item['image_path']);
+        }
+        $image_path = null;
+    }
+
+
+    if (empty($err) && (empty($item_name) || !isset($quantity))) {
         $err = "نام و تعداد قلم الزامی است.";
-    } else {
-        $sql = "UPDATE inventory_items SET name = ?, description = ?, quantity = ?, category_id = ?, is_rentable = ? WHERE id = ?";
+    }
+
+    if (empty($err)) {
+        $sql = "UPDATE inventory_items SET name = ?, description = ?, quantity = ?, category_id = ?, is_rentable = ?, image_path = ? WHERE id = ?";
         if ($stmt = mysqli_prepare($link, $sql)) {
-            mysqli_stmt_bind_param($stmt, "ssiiii", $item_name, $description, $quantity, $category_id, $is_rentable, $item_id);
+            mysqli_stmt_bind_param($stmt, "ssiiisi", $item_name, $description, $quantity, $category_id, $is_rentable, $image_path, $item_id);
             if (mysqli_stmt_execute($stmt)) {
                 $success_msg = "قلم با موفقیت به‌روزرسانی شد.";
-                // Refresh item data
-                $stmt_item = mysqli_prepare($link, $sql_item);
+                // Refresh item data after update
+                $stmt_item = mysqli_prepare($link, "SELECT * FROM inventory_items WHERE id = ?");
                 mysqli_stmt_bind_param($stmt_item, "i", $item_id);
                 mysqli_stmt_execute($stmt_item);
-                $result_item = mysqli_stmt_get_result($stmt_item);
-                $item = mysqli_fetch_assoc($result_item);
+                $item = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt_item));
                 mysqli_stmt_close($stmt_item);
             } else {
                 $err = "خطا در به‌روزرسانی قلم.";
@@ -111,6 +140,16 @@ require_once "../includes/header.php";
             <div class="form-group form-check">
                 <input type="checkbox" name="is_rentable" id="is_rentable" class="form-check-input" <?php if(!empty($item['is_rentable']) && $item['is_rentable']) echo 'checked'; ?>>
                 <label for="is_rentable" class="form-check-label">این کالا توسط مدرسان قابل کرایه است</label>
+            </div>
+            <div class="form-group">
+                <label for="item_image">عکس قلم</label>
+                <input type="file" name="item_image" id="item_image" class="form-control">
+                <?php if (!empty($item['image_path'])): ?>
+                    <div class="mt-2">
+                        <img src="../<?php echo htmlspecialchars($item['image_path']); ?>" alt="Current Image" style="width: 100px; height: auto; border-radius: 5px;">
+                        <label><input type="checkbox" name="remove_image" value="1"> حذف عکس فعلی</label>
+                    </div>
+                <?php endif; ?>
             </div>
             <div class="form-group">
                 <input type="submit" class="btn btn-primary" value="ذخیره تغییرات">

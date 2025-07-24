@@ -16,6 +16,21 @@
     <script src="https://unpkg.com/feather-icons"></script>
 
     <!-- Custom Scripts -->
-    <script src="../assets/js/script.js"></script>
+    <script src="/dabestan/assets/js/simple-lightbox.min.js"></script>
+    <script src="/dabestan/assets/js/script.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize Persian Datepicker
+            $(".persian-datepicker").persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                observer: true,
+                initialValue: false
+            });
+
+            // Initialize Lightbox
+            var lightbox = new SimpleLightbox('.rental-items-grid a', { /* options */ });
+        });
+    </script>
 </body>
 </html>
