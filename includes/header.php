@@ -147,6 +147,10 @@ if (!function_exists('has_permission')) {
                 <span id="date"></span>
                 <span id="time"></span>
             </div>
+            <form action="/dabestan/search.php" method="get" class="search-form">
+                <input type="text" name="q" placeholder="جستجو در همه بخش‌ها..." required>
+                <button type="submit"><i data-feather="search"></i></button>
+            </form>
             <div class="header-right">
                 <div class="header-notifications">
                     <div class="notification-icon" id="notification-icon">

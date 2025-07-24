@@ -73,6 +73,12 @@ foreach ($all_permissions as $perm) {
         $key = 'مشاهده';
     } elseif (strpos($perm['permission_name'], 'submit_') === 0 || strpos($perm['permission_name'], 'fill_') === 0) {
         $key = 'ارسال و تکمیل';
+    } elseif (strpos($perm['permission_name'], 'report') !== false) {
+        $key = 'گزارشات';
+    } elseif (strpos($perm['permission_name'], 'financial') !== false) {
+        $key = 'مالی';
+    } elseif (strpos($perm['permission_name'], 'telegram') !== false) {
+        $key = 'تلگرام';
     }
     $grouped_permissions[$key][] = $perm;
 }

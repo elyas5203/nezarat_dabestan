@@ -26,10 +26,17 @@ function to_persian_date($datetime_str, $format = 'Y/m/d H:i') {
  * @return bool True on success, false on failure.
  */
 function send_telegram_message($chat_id, $message) {
-    // IMPORTANT: Replace with your actual bot token
-    $bot_token = 'YOUR_BOT_TOKEN';
+    $token_file = __DIR__ . '/../config/telegram_token.php';
+    if (!file_exists($token_file)) {
+        return false;
+    }
+    require_once $token_file;
+    if (!defined('TELEGRAM_BOT_TOKEN') || TELEGRAM_BOT_TOKEN === '') {
+        return false;
+    }
+    $bot_token = TELEGRAM_BOT_TOKEN;
 
-    if (empty($chat_id) || $bot_token == 'YOUR_BOT_TOKEN') {
+    if (empty($chat_id)) {
         return false;
     }
 

@@ -38,6 +38,7 @@ $balance = $total_credit - $total_debit;
 
 
 require_once "../includes/header.php";
+require_once "../includes/functions.php";
 ?>
 
 <div class="page-content">

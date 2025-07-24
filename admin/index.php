@@ -17,21 +17,31 @@ $stats = [
     'users' => mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(id) as count FROM users"))['count'],
     'classes' => mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(id) as count FROM classes WHERE status = 'active'"))['count'],
     'open_tickets' => mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(id) as count FROM tickets WHERE status != 'closed'"))['count'],
-    'pending_tasks' => mysqli_fetch_assoc(mysqli_query($link, "SELECT COUNT(id) as count FROM tasks WHERE status = 'pending'"))['count']
+    'inventory_items' => mysqli_fetch_assoc(mysqli_query($link, "SELECT SUM(quantity) as count FROM inventory_items"))['count'] ?? 0,
 ];
 
-// Fetch last 5 activities
-$recent_activities = [];
-$sql_activity = "(SELECT user_id, CONCAT('تیکت جدید: ', title) as activity, created_at, 'ticket' as type, id FROM tickets ORDER BY created_at DESC LIMIT 5)
-                UNION
-                 (SELECT user_id, CONCAT('فرم خوداظهاری جدید برای کلاس ', c.class_name) as activity, sa.created_at, 'assessment' as type, sa.id FROM self_assessments sa JOIN classes c ON sa.class_id = c.id ORDER BY sa.created_at DESC LIMIT 5)
-                 ORDER BY created_at DESC LIMIT 5";
-$activity_query = mysqli_query($link, $sql_activity);
-while($row = mysqli_fetch_assoc($activity_query)){
-    $user_info = mysqli_fetch_assoc(mysqli_query($link, "SELECT username FROM users WHERE id = {$row['user_id']}"));
-    $row['username'] = $user_info['username'] ?? 'کاربر حذف شده';
-    $recent_activities[] = $row;
+// Data for Class Performance Chart
+$class_performance_data = [];
+$sql_class_perf = "SELECT c.class_name, AVG(sa.score) as avg_score
+                   FROM self_assessments sa
+                   JOIN classes c ON sa.class_id = c.id
+                   GROUP BY sa.class_id
+                   ORDER BY avg_score DESC";
+$class_perf_result = mysqli_query($link, $sql_class_perf);
+while($row = mysqli_fetch_assoc($class_perf_result)){
+    $class_performance_data['labels'][] = $row['class_name'];
+    $class_performance_data['scores'][] = round($row['avg_score'], 2);
 }
+
+// Data for Financial Summary Chart
+$financial_chart_data = ['labels' => [], 'debits' => [], 'credits' => []];
+$sql_financial = "SELECT
+                    SUM(CASE WHEN transaction_type = 'debit' THEN amount ELSE 0 END) as total_debit,
+                    SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END) as total_credit
+                  FROM booklet_transactions";
+$financial_result = mysqli_fetch_assoc(mysqli_query($link, $sql_financial));
+$financial_chart_data['labels'] = ['کل بدهی', 'کل پرداختی'];
+$financial_chart_data['data'] = [$financial_result['total_debit'] ?? 0, $financial_result['total_credit'] ?? 0];
 
 
 require_once "../includes/header.php";
@@ -61,56 +71,40 @@ require_once "../includes/header.php";
     <p>سلام <b><?php echo htmlspecialchars($_SESSION["username"]); ?></b>، به پنل مدیریت خوش آمدید.</p>
 
     <div class="dashboard-grid">
-    <div class="stat-card">
-        <div class="icon" style="color: #6610f2; background-color: #e0cffc;">
-            <i data-feather="users"></i>
+        <div class="stat-card">
+            <div class="icon" style="color: #6610f2; background-color: #e0cffc;"><i data-feather="users"></i></div>
+            <div class="info"><div class="number"><?php echo $stats['users']; ?></div><div class="label">تعداد کل کاربران</div></div>
         </div>
-        <div class="info">
-            <div class="number"><?php echo $stats['users']; ?></div>
-            <div class="label">تعداد کل کاربران</div>
+        <div class="stat-card">
+            <div class="icon" style="color: #007bff; background-color: #cce5ff;"><i data-feather="book-open"></i></div>
+            <div class="info"><div class="number"><?php echo $stats['classes']; ?></div><div class="label">کلاس‌های فعال</div></div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="icon" style="color: #007bff; background-color: #cce5ff;">
-            <i data-feather="book-open"></i>
+        <div class="stat-card">
+            <div class="icon" style="color: #ffc107; background-color: #fff3cd;"><i data-feather="message-square"></i></div>
+            <div class="info"><div class="number"><?php echo $stats['open_tickets']; ?></div><div class="label">تیکت‌های باز</div></div>
         </div>
-        <div class="info">
-            <div class="number"><?php echo $stats['classes']; ?></div>
-            <div class="label">کلاس‌های فعال</div>
+        <div class="stat-card">
+            <div class="icon" style="color: #198754; background-color: #d1e7dd;"><i data-feather="archive"></i></div>
+            <div class="info"><div class="number"><?php echo $stats['inventory_items']; ?></div><div class="label">اقلام در انبار</div></div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="icon" style="color: #ffc107; background-color: #fff3cd;">
-            <i data-feather="message-square"></i>
-        </div>
-        <div class="info">
-            <div class="number"><?php echo $stats['open_tickets']; ?></div>
-            <div class="label">تیکت‌های باز</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="icon" style="color: #dc3545; background-color: #f8d7da;">
-            <i data-feather="clock"></i>
-        </div>
-        <div class="info">
-            <div class="number"><?php echo $stats['pending_tasks']; ?></div>
-            <div class="label">وظایف در انتظار</div>
-        </div>
-    </div>
-</div>
-
-    <div class="quick-access">
-        <a href="manage_users.php?action=add" class="btn btn-primary"><i data-feather="plus"></i> افزودن کاربر</a>
-        <a href="manage_classes.php?action=add" class="btn btn-secondary"><i data-feather="plus"></i> افزودن کلاس</a>
-        <a href="manage_tasks.php?action=add" class="btn btn-info"><i data-feather="plus"></i> افزودن وظیفه</a>
     </div>
 
-<div class="activity-log chart-container" style="margin-top: 20px;">
-        <h3>آمار هفتگی</h3>
-        <canvas id="weeklyActivityChart"></canvas>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3>عملکرد کلاس‌ها (میانگین امتیاز خوداظهاری)</h3>
+                <canvas id="classPerformanceChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h3>خلاصه وضعیت مالی</h3>
+                <canvas id="financialSummaryChart"></canvas>
+            </div>
+        </div>
     </div>
 
-    <div class="activity-log">
+    <div class="activity-log mt-4">
         <h3>آخرین رویدادها</h3>
         <table class="table table-striped">
             <thead>
@@ -123,13 +117,11 @@ require_once "../includes/header.php";
             </thead>
             <tbody>
                 <?php
-                // Assuming the 'events' table and log_event function exist and are working.
-                // This part will populate with data once event logging is implemented across the application.
                 $sql_events = "SELECT e.*, u.username
                                FROM events e
                                LEFT JOIN users u ON e.user_id = u.id
                                ORDER BY e.created_at DESC
-                               LIMIT 10";
+                               LIMIT 5";
                 $events_result = mysqli_query($link, $sql_events);
                 if ($events_result && mysqli_num_rows($events_result) > 0):
                     while ($event = mysqli_fetch_assoc($events_result)):
@@ -154,60 +146,39 @@ require_once "../includes/header.php";
 </div>
 
 <?php
-// --- Data Fetching for Chart ---
-$chart_data = [
-    'labels' => [],
-    'tickets' => [],
-    'tasks' => []
-];
-for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i days"));
-    $jalali_date = to_persian_date($date, 'Y/m/d');
-    $chart_data['labels'][] = $jalali_date;
-
-    $sql_tickets = "SELECT COUNT(id) as count FROM tickets WHERE DATE(created_at) = '$date'";
-    $chart_data['tickets'][] = mysqli_fetch_assoc(mysqli_query($link, $sql_tickets))['count'];
-
-    $sql_tasks = "SELECT COUNT(id) as count FROM tasks WHERE DATE(created_at) = '$date'";
-    $chart_data['tasks'][] = mysqli_fetch_assoc(mysqli_query($link, $sql_tasks))['count'];
-}
-
 require_once "../includes/footer.php";
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('weeklyActivityChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
+    // Class Performance Chart
+    const classPerfCtx = document.getElementById('classPerformanceChart').getContext('2d');
+    new Chart(classPerfCtx, {
+        type: 'bar',
         data: {
-            labels: <?php echo json_encode($chart_data['labels']); ?>,
+            labels: <?php echo json_encode($class_performance_data['labels'] ?? []); ?>,
             datasets: [{
-                label: 'تیکت‌های جدید',
-                data: <?php echo json_encode($chart_data['tickets']); ?>,
-                borderColor: 'rgba(255, 193, 7, 1)',
-                backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                fill: true,
-                tension: 0.4
-            }, {
-                label: 'وظایف جدید',
-                data: <?php echo json_encode($chart_data['tasks']); ?>,
-                borderColor: 'rgba(220, 53, 69, 1)',
-                backgroundColor: 'rgba(220, 53, 69, 0.2)',
-                fill: true,
-                tension: 0.4
+                label: 'میانگین امتیاز',
+                data: <?php echo json_encode($class_performance_data['scores'] ?? []); ?>,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
             }]
         },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            }
-        }
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    // Financial Summary Chart
+    const financialCtx = document.getElementById('financialSummaryChart').getContext('2d');
+    new Chart(financialCtx, {
+        type: 'doughnut',
+        data: {
+            labels: <?php echo json_encode($financial_chart_data['labels'] ?? []); ?>,
+            datasets: [{
+                data: <?php echo json_encode($financial_chart_data['data'] ?? []); ?>,
+                backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(75, 192, 192, 0.7)'],
+            }]
+        },
+        options: { responsive: true, legend: { position: 'top' } }
     });
 });
 </script>
