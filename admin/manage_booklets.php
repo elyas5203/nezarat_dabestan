@@ -23,6 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_booklet'])) {
             mysqli_stmt_bind_param($stmt, "sds", $name, $price, $description);
             if (mysqli_stmt_execute($stmt)) {
                 $success_msg = "جزوه جدید با موفقیت اضافه شد.";
+                log_event($_SESSION['id'], 'create_booklet', "Booklet created: $name");
             } else {
                 $err = "خطا در افزودن جزوه.";
             }
@@ -95,7 +96,7 @@ require_once "../includes/header.php";
                             <td><?php echo htmlspecialchars(number_format($booklet['price'], 2)); ?></td>
                             <td><?php echo htmlspecialchars($booklet['description']); ?></td>
                             <td>
-                                <a href="#" class="btn btn-secondary btn-sm">ویرایش</a>
+                                <a href="edit_booklet.php?id=<?php echo $booklet['id']; ?>" class="btn btn-secondary btn-sm">ویرایش</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

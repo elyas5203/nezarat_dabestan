@@ -111,33 +111,46 @@ require_once "../includes/header.php";
     </div>
 
     <div class="activity-log">
-    <h3>آخرین فعالیت‌ها</h3>
-    <?php if(empty($recent_activities)): ?>
-        <p>فعالیت جدیدی ثبت نشده است.</p>
-    <?php else: ?>
-        <?php foreach($recent_activities as $activity):
-$activity_link = '#';
-            $icon = 'alert-circle';
-            if ($activity['type'] === 'ticket') {
-                $activity_link = "../user/view_ticket.php?id=" . $activity['id'];
-                $icon = 'message-square';
-            } elseif ($activity['type'] === 'assessment') {
-                $activity_link = "view_submission_details.php?id=" . $activity['id'];
-                $icon = 'file-text';
-            }
-        ?>
-            <div class="activity-item">
-                <div class="activity-icon" style="background-color: var(--secondary-color-light); color: var(--secondary-color);">
-                    <i data-feather="<?php echo $icon; ?>"></i>
-                </div>
-                <div class="activity-content">
-                    <a href="<?php echo $activity_link; ?>"><?php echo htmlspecialchars($activity['activity']); ?></a>
-                    <span class="meta">توسط <?php echo htmlspecialchars($activity['username']); ?> در <?php echo to_persian_date($activity['created_at']); ?></span>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
+        <h3>آخرین رویدادها</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>کاربر</th>
+                    <th>رویداد</th>
+                    <th>جزئیات</th>
+                    <th>زمان</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                // Assuming the 'events' table and log_event function exist and are working.
+                // This part will populate with data once event logging is implemented across the application.
+                $sql_events = "SELECT e.*, u.username
+                               FROM events e
+                               LEFT JOIN users u ON e.user_id = u.id
+                               ORDER BY e.created_at DESC
+                               LIMIT 10";
+                $events_result = mysqli_query($link, $sql_events);
+                if ($events_result && mysqli_num_rows($events_result) > 0):
+                    while ($event = mysqli_fetch_assoc($events_result)):
+                ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($event['username'] ?? 'سیستم'); ?></td>
+                            <td><?php echo htmlspecialchars($event['action']); ?></td>
+                            <td><?php echo htmlspecialchars($event['details']); ?></td>
+                            <td><?php echo time_ago($event['created_at']); ?></td>
+                        </tr>
+                <?php
+                    endwhile;
+                else:
+                ?>
+                    <tr>
+                        <td colspan="4" class="text-center">هیچ رویدادی برای نمایش وجود ندارد.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <?php

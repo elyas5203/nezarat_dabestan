@@ -201,4 +201,46 @@ function time_ago($datetime, $full = false) {
     if (!$full) $string = array_slice($string, 0, 1);
     return $string ? implode(', ', $string) . ' پیش' : 'همین الان';
 }
+
+/**
+ * Checks if the current user is an admin or has a specific permission.
+ * Redirects to index.php if the user does not have permission.
+ *
+ * @param string $permission_name The name of the permission to check.
+ */
+function is_admin_or_has_permission($permission_name) {
+    // Session must be started before calling this function.
+    if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+        return false;
+    }
+
+    // Admin has all permissions.
+    if (isset($_SESSION["is_admin"]) && $_SESSION["is_admin"] === true) {
+        return true;
+    }
+
+    // Check for specific permission in the session variable.
+    if (isset($_SESSION["permissions"]) && in_array($permission_name, $_SESSION["permissions"])) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Logs an event to the events table.
+ *
+ * @param int|null $user_id The ID of the user who performed the action. Can be null for system actions.
+ * @param string $action A short description of the action (e.g., 'user_login', 'create_booklet').
+ * @param string|null $details More details about the event (e.g., the name of the created booklet).
+ */
+function log_event($user_id, $action, $details = null) {
+    $link = get_db_connection();
+    $sql = "INSERT INTO events (user_id, action, details) VALUES (?, ?, ?)";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        mysqli_stmt_bind_param($stmt, "iss", $user_id, $action, $details);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
+}
 ?>

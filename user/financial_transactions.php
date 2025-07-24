@@ -80,6 +80,7 @@ if($result_trans){
 
 
 require_once "../includes/header.php";
+require_once "../includes/functions.php";
 ?>
 
 <div class="page-content">
@@ -175,7 +176,7 @@ require_once "../includes/header.php";
                             <?php echo htmlspecialchars($trans['notes']); ?>
                         <?php endif; ?>
                     </td>
-                    <td><?php echo $trans['transaction_date']; ?></td>
+                    <td><?php echo to_persian_date($trans['transaction_date']); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

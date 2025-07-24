@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_item'])) {
     $item_name = trim($_POST['item_name']);
     $description = trim($_POST['description']);
     $quantity = trim($_POST['quantity']);
-    $category_id = trim($_POST['category_id']);
+    $category_id = !empty($_POST['category_id']) ? trim($_POST['category_id']) : null;
 
     if (empty($item_name) || !isset($quantity)) {
         $err = "نام و تعداد قلم الزامی است.";
@@ -36,10 +36,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_item'])) {
             if (mysqli_stmt_execute($stmt)) {
                 $success_msg = "قلم جدید با موفقیت به انبار اضافه شد.";
             } else {
-                $err = "خطا در افزودن قلم.";
+                $err = "خطا در افزودن قلم: " . mysqli_error($link);
             }
             mysqli_stmt_close($stmt);
         }
+    }
+}
+
+// Handle Delete Item
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_item'])) {
+    $item_id = $_POST['item_id'];
+    $sql = "DELETE FROM inventory_items WHERE id = ?";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        mysqli_stmt_bind_param($stmt, "i", $item_id);
+        if (mysqli_stmt_execute($stmt)) {
+            $success_msg = "قلم با موفقیت حذف شد.";
+        } else {
+            $err = "خطا در حذف قلم.";
+        }
+        mysqli_stmt_close($stmt);
     }
 }
 
@@ -121,6 +136,10 @@ require_once "../includes/header.php";
                             <td><?php echo htmlspecialchars($item['description']); ?></td>
                             <td>
                                 <a href="#" class="btn btn-secondary btn-sm">ویرایش</a>
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" style="display: inline-block;">
+                                    <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
+                                    <input type="submit" name="delete_item" value="حذف" class="btn btn-danger btn-sm" onclick="return confirm('آیا از حذف این قلم مطمئن هستید؟');">
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
