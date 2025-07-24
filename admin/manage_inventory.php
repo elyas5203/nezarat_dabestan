@@ -26,13 +26,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_item'])) {
     $description = trim($_POST['description']);
     $quantity = trim($_POST['quantity']);
     $category_id = !empty($_POST['category_id']) ? trim($_POST['category_id']) : null;
+    $image_path = null;
+
+    // Handle image upload
+    if (isset($_FILES['item_image']) && $_FILES['item_image']['error'] == 0) {
+        $target_dir = "../uploads/inventory/";
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+        $target_file = $target_dir . basename($_FILES["item_image"]["name"]);
+        $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+
+        // Basic validation
+        $check = getimagesize($_FILES["item_image"]["tmp_name"]);
+        if ($check !== false) {
+            if (move_uploaded_file($_FILES["item_image"]["tmp_name"], $target_file)) {
+                $image_path = "uploads/inventory/" . basename($_FILES["item_image"]["name"]);
+            } else {
+                $err = "Sorry, there was an error uploading your file.";
+            }
+        } else {
+            $err = "File is not an image.";
+        }
+    }
 
     if (empty($item_name) || !isset($quantity)) {
         $err = "نام و تعداد قلم الزامی است.";
     } else {
-        $sql = "INSERT INTO inventory_items (name, description, quantity, category_id) VALUES (?, ?, ?, ?)";
+        $sql = "INSERT INTO inventory_items (name, description, quantity, category_id, image_path) VALUES (?, ?, ?, ?, ?)";
         if ($stmt = mysqli_prepare($link, $sql)) {
-            mysqli_stmt_bind_param($stmt, "ssii", $item_name, $description, $quantity, $category_id);
+            mysqli_stmt_bind_param($stmt, "ssiis", $item_name, $description, $quantity, $category_id, $image_path);
             if (mysqli_stmt_execute($stmt)) {
                 $success_msg = "قلم جدید با موفقیت به انبار اضافه شد.";
             } else {
@@ -83,7 +106,7 @@ require_once "../includes/header.php";
     <!-- Create New Item Section -->
     <div class="form-container" style="margin-bottom: 30px;">
         <h3>افزودن قلم جدید به انبار</h3>
-        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="item_name">نام قلم <span style="color: red;">*</span></label>
                 <input type="text" name="item_name" id="item_name" class="form-control" required>
@@ -104,6 +127,10 @@ require_once "../includes/header.php";
                         <option value="<?php echo $category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="form-group">
+                <label for="item_image">تصویر قلم</label>
+                <input type="file" name="item_image" id="item_image" class="form-control">
             </div>
             <div class="form-group">
                 <input type="submit" name="add_item" class="btn btn-primary" value="افزودن قلم">
