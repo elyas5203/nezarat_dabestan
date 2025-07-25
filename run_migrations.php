@@ -3,7 +3,7 @@ session_start();
 require_once "includes/db.php"; // Using the direct DB connection details
 require_once "includes/functions.php";
 
-if (!isset($_SESSION["loggedin"]) || !$_SESSION["loggedin"] || !is_admin()) {
+if (!isset($_SESSION["loggedin"]) || !$_SESSION["loggedin"] || !isset($_SESSION["is_admin"]) || !$_SESSION["is_admin"]) {
     header("location: index.php");
     exit;
 }

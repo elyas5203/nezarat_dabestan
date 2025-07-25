@@ -4,7 +4,7 @@ require_once "../includes/db_singleton.php";
 require_once "../includes/functions.php";
 require_once "../includes/jdf.php";
 
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !is_admin()) {
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["is_admin"]) || !$_SESSION["is_admin"]) {
     header("location: ../index.php");
     exit;
 }
