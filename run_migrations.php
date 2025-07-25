@@ -3,12 +3,14 @@ session_start();
 require_once "includes/db.php"; // Using the direct DB connection details
 require_once "includes/functions.php";
 
-if (!isset($_SESSION["loggedin"]) || !$_SESSION["loggedin"] || !isset($_SESSION["is_admin"]) || !$_SESSION["is_admin"]) {
+// Corrected admin check using session variable
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["is_admin"]) || !$_SESSION["is_admin"]) {
     header("location: index.php");
     exit;
 }
 
 $messages = [];
+$link = get_db_connection();
 
 // 1. Check for schema_migrations table
 $check_table_sql = "SHOW TABLES LIKE 'schema_migrations'";
@@ -49,6 +51,11 @@ foreach ($migration_files as $file) {
 
         $sql_script = file_get_contents($file);
 
+        if (empty(trim($sql_script))) {
+            $messages[] = "مایگریشن $version خالی است، از آن عبور می‌کنیم.";
+            continue;
+        }
+
         // Execute multi-query
         if (mysqli_multi_query($link, $sql_script)) {
             // Must clear results from multi_query
@@ -73,8 +80,10 @@ foreach ($migration_files as $file) {
     }
 }
 
-if ($new_migrations_applied == 0) {
+if ($new_migrations_applied == 0 && count($migration_files) > 0) {
     $messages[] = "دیتابیس شما به‌روز است. هیچ مایگریشن جدیدی برای اجرا وجود ندارد.";
+} elseif (count($migration_files) == 0) {
+    $messages[] = "هیچ فایل مایگریشنی در پوشه `migrations` یافت نشد.";
 }
 
 require_once "includes/header.php";
