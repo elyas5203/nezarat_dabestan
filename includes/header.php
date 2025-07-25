@@ -147,6 +147,12 @@ if (!function_exists('has_permission')) {
                 <span id="date"></span>
                 <span id="time"></span>
             </div>
+            <div class="header-search">
+                <form action="/dabestan/search.php" method="get" class="d-flex">
+                    <input name="q" class="form-control me-2" type="search" placeholder="جستجو در کاربران، کلاس‌ها و..." aria-label="Search">
+                    <button class="btn btn-primary" type="submit"><i data-feather="search"></i></button>
+                </form>
+            </div>
             <div class="header-right">
                 <div class="header-notifications">
                     <div class="notification-icon" id="notification-icon">

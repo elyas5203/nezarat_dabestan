@@ -106,12 +106,14 @@ require_once "../includes/header.php";
                     <h4><?php echo htmlspecialchars($group_name); ?></h4>
                     <?php foreach($permissions as $perm): ?>
                         <div class="permission-item">
-                           <input type="checkbox" name="permissions[]" value="<?php echo $perm['id']; ?>" id="perm_<?php echo $perm['id']; ?>"
+    <input type="checkbox" name="permissions[]" value="<?php echo $perm['id']; ?>" id="perm_<?php echo $perm['id']; ?>"
                                 <?php if(in_array($perm['id'], $current_permissions)) echo 'checked'; ?>>
-                           <label for="perm_<?php echo $perm['id']; ?>">
-                               <span><?php echo htmlspecialchars($perm['permission_description'] ?: $perm['permission_name']); ?></span>
-                               <small>(<?php echo htmlspecialchars($perm['permission_name']); ?>)</small>
-                           </label>
+    <label for="perm_<?php echo $perm['id']; ?>">
+        <a href="#" class="permission-link" data-permission-name="<?php echo htmlspecialchars($perm['permission_name']); ?>" title="برای اطلاعات بیشتر کلیک کنید">
+            <span><?php echo htmlspecialchars($perm['permission_description'] ?: $perm['permission_name']); ?></span>
+            <small>(<?php echo htmlspecialchars($perm['permission_name']); ?>)</small>
+        </a>
+    </label>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -123,6 +125,42 @@ require_once "../includes/header.php";
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const permissionLinks = document.querySelectorAll('.permission-link');
+    permissionLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const permissionName = this.dataset.permissionName;
+
+            // This is a simple mapping. You can make it more sophisticated.
+            const pageMap = {
+                'manage_users': 'manage_users.php',
+                'manage_roles': 'manage_roles.php',
+                'manage_classes': 'manage_classes.php',
+                'manage_forms': 'manage_forms.php',
+                'manage_inventory': 'manage_inventory.php',
+                'manage_financials': 'manage_booklets.php', // Or another financial page
+                'manage_donations': 'manage_donations.php',
+                'manage_recruitment': 'manage_regions.php',
+                'manage_meetings': 'manage_parent_meetings.php', // Or another meeting page
+                'view_analytics': 'assessment_analysis.php',
+                'submit_ticket': '../user/new_ticket.php',
+                'fill_self_assessment': '../user/my_self_assessments.php'
+            };
+
+            const targetPage = pageMap[permissionName];
+
+            if (targetPage) {
+                window.open(targetPage, '_blank');
+            } else {
+                alert('صفحه مرتبطی برای این دسترسی یافت نشد: ' + permissionName);
+            }
+        });
+    });
+});
+</script>
 
 <?php
 mysqli_close($link);

@@ -73,11 +73,17 @@ function calculate_linear_regression(array $x, array $y): array {
         $sum_x2 += ($x[$i] * $x[$i]);
     }
 
-    $slope = ($n * $sum_xy - $sum_x * $sum_y) / ($n * $sum_x2 - $sum_x * $sum_x);
+    // Avoid division by zero
+    $denominator = ($n * $sum_x2 - $sum_x * $sum_x);
+    if ($denominator == 0) {
+        return ['slope' => 0, 'intercept' => 0, 'y_start' => 0, 'y_end' => 0];
+    }
+
+    $slope = $denominator ? ($n * $sum_xy - $sum_x * $sum_y) / $denominator : 0;
     $intercept = ($sum_y - $slope * $sum_x) / $n;
 
-    $y_start = $slope * $x[0] + $intercept;
-    $y_end = $slope * end($x) + $intercept;
+    $y_start = isset($x[0]) ? ($slope * $x[0] + $intercept) : 0;
+    $y_end = !empty($x) ? ($slope * end($x) + $intercept) : 0;
 
     return ['slope' => $slope, 'intercept' => $intercept, 'y_start' => $y_start, 'y_end' => $y_end];
 }
