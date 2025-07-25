@@ -3,7 +3,7 @@ session_start();
 require_once "includes/db_singleton.php";
 require_once "includes/functions.php";
 
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !is_admin()) {
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !$_SESSION['is_admin']) {
     header("location: index.php");
     exit;
 }
