@@ -32,18 +32,42 @@ if ($result_duplicates && mysqli_num_rows($result_duplicates) > 0) {
         }
 
         if (!empty($ids_to_delete)) {
-            $ids_to_delete_str = implode(',', $ids_to_delete);
+            $ids_to_delete_str = implode(',', array_map('intval', $ids_to_delete));
 
-            // Update foreign keys before deleting
-            mysqli_query($link, "UPDATE role_permissions SET permission_id = $id_to_keep WHERE permission_id IN ($ids_to_delete_str)");
-            mysqli_query($link, "UPDATE user_permissions SET permission_id = $id_to_keep WHERE permission_id IN ($ids_to_delete_str)");
+            // --- FIX for role_permissions ---
+            $sql_delete_conflicts_roles = "DELETE rp_del FROM role_permissions AS rp_del
+                                           JOIN role_permissions AS rp_keep ON rp_del.role_id = rp_keep.role_id
+                                           WHERE rp_del.permission_id IN ($ids_to_delete_str)
+                                           AND rp_keep.permission_id = $id_to_keep";
+            if (mysqli_query($link, $sql_delete_conflicts_roles)) {
+                $messages[] = "حذف دسترسی‌های متعارض از `role_permissions` برای '{$name}' انجام شد.";
+            }
 
-            // Delete the duplicate permissions
-            $sql_delete = "DELETE FROM permissions WHERE id IN ($ids_to_delete_str)";
-            if (mysqli_query($link, $sql_delete)) {
-                $messages[] = "دسترسی تکراری '{$name}' پاکسازی شد. شناسه اصلی: {$id_to_keep}.";
+            $sql_update_roles = "UPDATE role_permissions SET permission_id = $id_to_keep WHERE permission_id IN ($ids_to_delete_str)";
+            if (!mysqli_query($link, $sql_update_roles)) {
+                 $messages[] = "خطا در بروزرسانی `role_permissions` برای '{$name}': " . mysqli_error($link);
+            }
+
+            // --- FIX for user_permissions ---
+            $sql_delete_conflicts_users = "DELETE up_del FROM user_permissions AS up_del
+                                           JOIN user_permissions AS up_keep ON up_del.user_id = up_keep.user_id
+                                           WHERE up_del.permission_id IN ($ids_to_delete_str)
+                                           AND up_keep.permission_id = $id_to_keep";
+            if (mysqli_query($link, $sql_delete_conflicts_users)) {
+                $messages[] = "حذف دسترسی‌های متعارض از `user_permissions` برای '{$name}' انجام شد.";
+            }
+
+            $sql_update_users = "UPDATE user_permissions SET permission_id = $id_to_keep WHERE permission_id IN ($ids_to_delete_str)";
+            if (!mysqli_query($link, $sql_update_users)) {
+                $messages[] = "خطا در بروزرسانی `user_permissions` برای '{$name}': " . mysqli_error($link);
+            }
+
+            // --- Finally, delete the master permission records ---
+            $sql_delete_perms = "DELETE FROM permissions WHERE id IN ($ids_to_delete_str)";
+            if (mysqli_query($link, $sql_delete_perms)) {
+                $messages[] = "دسترسی‌های تکراری اصلی برای '{$name}' با موفقیت حذف شدند.";
             } else {
-                $messages[] = "خطا در حذف دسترسی تکراری '{$name}': " . mysqli_error($link);
+                $messages[] = "خطا در حذف دسترسی‌های اصلی برای '{$name}': " . mysqli_error($link);
             }
         }
     }
