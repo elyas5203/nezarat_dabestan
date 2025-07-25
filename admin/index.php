@@ -22,15 +22,24 @@ $stats = [
 
 // Fetch last 5 activities
 $recent_activities = [];
-$sql_activity = "(SELECT user_id, CONCAT('تیکت جدید: ', title) as activity, created_at, 'ticket' as type, id FROM tickets ORDER BY created_at DESC LIMIT 5)
-                UNION
-                 (SELECT user_id, CONCAT('فرم خوداظهاری جدید برای کلاس ', c.class_name) as activity, sa.created_at, 'assessment' as type, sa.id FROM self_assessments sa JOIN classes c ON sa.class_id = c.id ORDER BY sa.created_at DESC LIMIT 5)
-                 ORDER BY created_at DESC LIMIT 5";
+$sql_activity = "
+    SELECT u.username, a.* FROM (
+        (SELECT user_id, CONCAT('تیکت جدید: ', title) as activity, created_at, 'ticket' as type, id FROM tickets)
+        UNION ALL
+        (SELECT user_id, CONCAT('فرم خوداظهاری جدید برای کلاس ', c.class_name) as activity, sa.created_at, 'assessment' as type, sa.id FROM self_assessments sa JOIN classes c ON sa.class_id = c.id)
+    ) as a
+    LEFT JOIN users u ON a.user_id = u.id
+    ORDER BY a.created_at DESC
+    LIMIT 5
+";
 $activity_query = mysqli_query($link, $sql_activity);
-while($row = mysqli_fetch_assoc($activity_query)){
-    $user_info = mysqli_fetch_assoc(mysqli_query($link, "SELECT username FROM users WHERE id = {$row['user_id']}"));
-    $row['username'] = $user_info['username'] ?? 'کاربر حذف شده';
-    $recent_activities[] = $row;
+if ($activity_query) {
+    while($row = mysqli_fetch_assoc($activity_query)){
+        if (is_null($row['username'])) {
+            $row['username'] = 'کاربر حذف شده';
+        }
+        $recent_activities[] = $row;
+    }
 }
 
 
