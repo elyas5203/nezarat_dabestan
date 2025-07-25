@@ -1,4 +1,4 @@
-CREATE TABLE `checklist_templates` (
+CREATE TABLE IF NOT EXISTS `checklist_templates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `template_name` varchar(255) NOT NULL,
   `description` text,
@@ -9,7 +9,7 @@ CREATE TABLE `checklist_templates` (
   CONSTRAINT `checklist_templates_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `checklist_template_items` (
+CREATE TABLE IF NOT EXISTS `checklist_template_items` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `template_id` int(11) NOT NULL,
   `item_text` varchar(255) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE `checklist_template_items` (
   CONSTRAINT `checklist_template_items_ibfk_1` FOREIGN KEY (`template_id`) REFERENCES `checklist_templates` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `meeting_checklists` (
+CREATE TABLE IF NOT EXISTS `meeting_checklists` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `meeting_id` int(11) NOT NULL,
   `meeting_type` varchar(50) NOT NULL,

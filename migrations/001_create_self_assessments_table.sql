@@ -1,4 +1,4 @@
-CREATE TABLE `self_assessments` (
+CREATE TABLE IF NOT EXISTS `self_assessments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `class_id` int(11) NOT NULL,

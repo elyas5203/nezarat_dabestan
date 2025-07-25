@@ -1,4 +1,4 @@
-CREATE TABLE `attendance_history` (
+CREATE TABLE IF NOT EXISTS `attendance_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) NOT NULL,
   `class_id` int(11) NOT NULL,

@@ -1,4 +1,4 @@
-CREATE TABLE `dynamic_forms` (
+CREATE TABLE IF NOT EXISTS `dynamic_forms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `form_name` varchar(255) NOT NULL,
   `form_structure` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`form_structure`)),
