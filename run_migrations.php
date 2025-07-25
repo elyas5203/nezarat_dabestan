@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once "includes/db.php"; // Using the direct DB connection details
+// Corrected include to use the singleton pattern for DB connection
+require_once "includes/db_singleton.php";
 require_once "includes/functions.php";
 
 // Corrected admin check using session variable
@@ -10,7 +11,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_
 }
 
 $messages = [];
-$link = get_db_connection();
+$link = get_db_connection(); // Get DB connection using the function
 
 // 1. Check for schema_migrations table
 $check_table_sql = "SHOW TABLES LIKE 'schema_migrations'";
@@ -106,6 +107,7 @@ require_once "includes/header.php";
 </div>
 
 <?php
-mysqli_close($link);
+// Do not close the connection from the singleton here, it will be closed on script shutdown.
+// mysqli_close($link);
 require_once "includes/footer.php";
 ?>
