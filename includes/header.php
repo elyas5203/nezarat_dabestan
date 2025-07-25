@@ -122,6 +122,7 @@ if (!function_exists('has_permission')) {
              <li class="has-submenu">
                 <a href="#"><i data-feather="archive"></i><span>انبار و مالی</span><i class="submenu-arrow" data-feather="chevron-left"></i></a>
                 <ul class="submenu">
+                    <li><a href="/dabestan/admin/financial_report.php"><span>گزارش کلی مالی</span></a></li>
                     <li><a href="/dabestan/admin/manage_categories.php"><span>دسته‌بندی انبار</span></a></li>
                     <li><a href="/dabestan/admin/manage_inventory.php"><span>موجودی انبار</span></a></li>
                     <li><a href="/dabestan/admin/manage_booklets.php"><span>جزوات</span></a></li>
@@ -146,12 +147,6 @@ if (!function_exists('has_permission')) {
             <div id="datetime">
                 <span id="date"></span>
                 <span id="time"></span>
-            </div>
-            <div class="header-search">
-                <form action="/dabestan/search.php" method="get" class="d-flex">
-                    <input name="q" class="form-control me-2" type="search" placeholder="جستجو در کاربران، کلاس‌ها و..." aria-label="Search">
-                    <button class="btn btn-primary" type="submit"><i data-feather="search"></i></button>
-                </form>
             </div>
             <div class="header-right">
                 <div class="header-notifications">
