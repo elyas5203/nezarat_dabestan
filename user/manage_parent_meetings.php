@@ -13,19 +13,23 @@ $err = $success_msg = "";
 // Fetch classes for the dropdown
 $classes_result = mysqli_query($link, "SELECT id, class_name FROM classes WHERE status = 'active' ORDER BY class_name ASC");
 
+// Fetch checklist templates for the dropdown
+$checklist_templates_result = mysqli_query($link, "SELECT id, template_name FROM checklist_templates ORDER BY template_name ASC");
+
 // Handle Add Meeting POST Request
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_meeting'])) {
     $class_id = trim($_POST['class_id']);
-    $meeting_date = trim($_POST['meeting_date']);
+    $meeting_date = trim($_POST['meeting_date_gregorian']);
     $location = trim($_POST['location']);
     $speaker = trim($_POST['speaker']);
+    $checklist_template_id = trim($_POST['checklist_template_id']);
 
     if (empty($class_id) || empty($meeting_date)) {
         $err = "انتخاب کلاس و تاریخ جلسه الزامی است.";
     } else {
-        $sql = "INSERT INTO parent_meetings (class_id, meeting_date, location, speaker, created_by) VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO parent_meetings (class_id, meeting_date, location, speaker, created_by, checklist_template_id) VALUES (?, ?, ?, ?, ?, ?)";
         if ($stmt = mysqli_prepare($link, $sql)) {
-            mysqli_stmt_bind_param($stmt, "isssi", $class_id, $meeting_date, $location, $speaker, $_SESSION['id']);
+            mysqli_stmt_bind_param($stmt, "isssii", $class_id, $meeting_date, $location, $speaker, $_SESSION['id'], $checklist_template_id);
             if (mysqli_stmt_execute($stmt)) {
                 $success_msg = "جلسه اولیا با موفقیت ثبت شد.";
             } else {
@@ -86,6 +90,15 @@ require_once "../includes/header.php";
                 <label for="speaker">نام سخنران</label>
                 <input type="text" name="speaker" id="speaker" class="form-control">
             </div>
+             <div class="form-group">
+                <label for="checklist_template_id">قالب چک‌لیست</label>
+                <select name="checklist_template_id" id="checklist_template_id" class="form-control">
+                    <option value="">بدون چک‌لیست</option>
+                    <?php while($template = mysqli_fetch_assoc($checklist_templates_result)): ?>
+                        <option value="<?php echo $template['id']; ?>"><?php echo htmlspecialchars($template['template_name']); ?></option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
             <div class="form-group">
                 <input type="submit" name="add_meeting" class="btn btn-primary" value="ثبت جلسه">
             </div>
@@ -118,9 +131,8 @@ require_once "../includes/header.php";
                             <td><?php echo htmlspecialchars($meeting['speaker']); ?></td>
                             <td><?php echo htmlspecialchars($meeting['location']); ?></td>
                             <td>
-                                <!-- We'll add functionality to these buttons later -->
-                                <a href="#" class="btn btn-info btn-sm">ثبت گزارش‌ها</a>
-                                <a href="#" class="btn btn-secondary btn-sm">ویرایش</a>
+                                <a href="meeting_reports.php?id=<?php echo $meeting['id']; ?>" class="btn btn-info btn-sm">گزارش و چک‌لیست</a>
+                                <a href="edit_parent_meeting.php?id=<?php echo $meeting['id']; ?>" class="btn btn-secondary btn-sm">ویرایش</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

@@ -109,6 +109,7 @@ if (!function_exists('has_permission')) {
                 <a href="#"><i data-feather="database"></i><span>محتوا</span><i class="submenu-arrow" data-feather="chevron-left"></i></a>
                 <ul class="submenu">
                     <li><a href="/dabestan/admin/manage_forms.php"><span>فرم‌ها</span></a></li>
+                    <li><a href="/dabestan/admin/manage_checklist_templates.php"><span>قالب‌های چک‌لیست</span></a></li>
                     <li><a href="/dabestan/admin/manage_general_events.php"><span>رویدادهای عمومی</span></a></li>
                     <li><a href="/dabestan/admin/manage_regions.php"><span>مناطق جذب</span></a></li>
                 </ul>
